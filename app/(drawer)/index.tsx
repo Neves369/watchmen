@@ -1,14 +1,17 @@
-import { Stack } from 'expo-router';
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Container } from '~/components/Container';
-import { ScreenContent } from '~/components/ScreenContent';
+import { Text, View } from 'react-native';
+import { Stack } from 'expo-router';
 
 export default function Home() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Home' }} />
+      <Stack.Screen options={{ title: 'Watchmen' }} />
       <Container>
-        <ScreenContent path="app/(drawer)/index.tsx" title="Home" />
+        <View className="flex-1 items-center justify-center">
+          <MaterialCommunityIcons name="cube-scan" size={200} color="#6b7280" />
+          <Text className="text-xl font-bold text-gray-500">Selecione um Módulo para iniciar</Text>
+        </View>
       </Container>
     </>
   );

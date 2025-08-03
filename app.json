@@ -31,7 +31,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -39,6 +41,13 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.neves369.watchmen"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "36b178a4-c8a2-4a29-b01b-8a75a5f9e50c"
       }
     }
   }

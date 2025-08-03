@@ -18,10 +18,25 @@ const DrawerLayout = () => {
         }}
       />
       <Drawer.Screen
-        name="(tabs)"
+        name="network/index"
         options={{
-          headerTitle: 'Tabs',
-          drawerLabel: 'Tabs',
+          headerTitle: 'Varredura de Rede',
+          drawerLabel: 'Network',
+          drawerIcon: ({ size, color }) => (
+            <MaterialIcons name="border-bottom" size={size} color={color} />
+          ),
+          headerRight: () => (
+            <Link href="/modal" asChild>
+              <HeaderButton />
+            </Link>
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="bluetooth/index"
+        options={{
+          headerTitle: 'Varredura de Bluetooth',
+          drawerLabel: 'Bluetooth',
           drawerIcon: ({ size, color }) => (
             <MaterialIcons name="border-bottom" size={size} color={color} />
           ),
