@@ -1,48 +1,46 @@
-import { useState } from 'react';
-import { Stack } from 'expo-router';
-import { View, Text, TextInput, Button } from 'react-native';
+import { useRouter } from 'expo-router';
+import { View, Text, Button } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-type ModalProps = {
-  onConfirm?: (ports: number[]) => void;
-  initialPorts?: number[];
-};
-
-export default function Modal({ onConfirm, initialPorts = [22, 80, 443] }: ModalProps) {
-  const [ports, setPorts] = useState(initialPorts.join(', '));
-
-  const handleConfirm = () => {
-    // Converte string para array de números, removendo espaços e entradas inválidas
-    const portArray = ports
-      .split(',')
-      .map((p) => parseInt(p.trim(), 10))
-      .filter((p) => !isNaN(p) && p > 0 && p < 65536);
-    onConfirm?.(portArray);
-  };
+export default function Modal() {
+  const router = useRouter();
 
   return (
-    <View style={{ padding: 24, backgroundColor: '#222', borderRadius: 12 }}>
-      <Stack.Screen options={{ title: 'Configurações' }} />
+    <SafeAreaView style={{ padding: 24, backgroundColor: '#222', borderRadius: 12, gap: 25 }}>
       <Text style={{ color: '#fff', fontSize: 18, marginBottom: 12, fontWeight: 'bold' }}>
-        Escolha as portas TCP para varredura
+        Módulo Network (WIFI)
       </Text>
-      <TextInput
-        style={{
-          backgroundColor: '#333',
-          color: '#fff',
-          borderRadius: 8,
-          padding: 10,
-          marginBottom: 16,
+      <Text style={{ color: '#ccc', marginBottom: 5 }}>
+        O módulo de network varre os IPs dentro do range da rede em que o dispositivo está
+        conectado, esses IPs representam dispositivos conectados à mesma rede. Se um IP aparece na
+        lista, significa que o dispositivo está ativo na rede, pelo menos uma das portas testadas
+        está aberta e possivelmente aceita conexão.
+      </Text>
+      <Text style={{ color: '#ccc', marginBottom: 5 }}>
+        Se o dispositvo não aparecer na lista, pode ser que ele não está ativo ou nenhuma das portas
+        testadas está abertaou ainda que o firewall do dispositivo bloqueou a conexão.
+      </Text>
+
+      <Text style={{ color: '#fff', fontSize: 18, marginBottom: 12, fontWeight: 'bold' }}>
+        Módulo Bluetooth
+      </Text>
+      <Text style={{ color: '#ccc', marginBottom: 5 }}>
+        O módulo de network varre os IP's dentro do range da rede em que o dispositivo está
+        conectado, esses IP's representam dispositivos conectados à mesma rede. Se um IP aparece na
+        lista, significa que o dispositivo está ativo na rede, pelo menos uma das portas testadas
+        está aberta e possivelmente aceita conexão.
+      </Text>
+      <Text style={{ color: '#ccc', marginBottom: 5 }}>
+        Se o dispositvo não aparecer na lista, pode ser que ele não está ativo ou nenhuma das portas
+        testadas está abertaou ainda que o firewall do dispositivo bloqueou a conexão.
+      </Text>
+      <Button
+        title="Fechar"
+        onPress={() => {
+          router.back();
         }}
-        value={ports}
-        onChangeText={setPorts}
-        placeholder="Ex: 22, 80, 443, 8080"
-        placeholderTextColor="#aaa"
-        keyboardType="numbers-and-punctuation"
+        color="#00C851"
       />
-      <Text style={{ color: '#ccc', marginBottom: 16 }}>
-        Quanto mais portas você escolher, mais tempo pode demorar para finalizar a varredura.
-      </Text>
-      <Button title="Confirmar" onPress={handleConfirm} color="#00C851" />
-    </View>
+    </SafeAreaView>
   );
 }

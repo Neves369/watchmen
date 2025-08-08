@@ -4,13 +4,28 @@ import { useCallback, useState } from 'react';
 import sip from '../../../utils/shift8-ip-func';
 import TcpSocket from 'react-native-tcp-socket';
 import { Container } from '~/components/Container';
+import { global, updateStore } from '~/store/store';
 import NetInfo from '@react-native-community/netinfo';
-import { FlatList, TouchableOpacity, View, Text, ScrollView, ToastAndroid } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  ScrollView,
+  ToastAndroid,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+
+type GroupedScanResult = { ip: string; ports: number[] };
+type ScanResult = { ip: string; port: number; status?: string };
 
 export default function Home() {
-  const portRange = [22, 80, 443, 50];
-  type ScanResult = { ip: string; port: number };
-  type GroupedScanResult = { ip: string; ports: number[] };
+  const store = global((state) => state);
+  const portRange = store.portas;
+  const customTimeout = store.timeout;
+  const [totalScans, setTotalScans] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
   const [scanResult, setScanResult] = useState<GroupedScanResult[]>([]);
 
   const network_promise = new Promise(function (resolve, reject) {
@@ -55,16 +70,23 @@ export default function Home() {
 
       // Se der erro, rejeita a promise
       client.on('error', function (err: any) {
-        // Porta fechada ou host inacessível
         client.destroy();
-        reject(err);
+        if (
+          err.code === 'ECONNREFUSED' ||
+          err.code === 'EHOSTUNREACH' ||
+          err.code === 'ENETUNREACH'
+        ) {
+          resolve({ ip: hostIP, port: hostPort, status: 'closed' }); // Porta fechada ou host inacessível
+        } else {
+          reject(err); // Outros erros
+        }
       });
 
       // Timeout para evitar promessas pendentes
       const timeout = setTimeout(() => {
         client.destroy();
         reject(new Error('Timeout'));
-      }, 5000);
+      }, customTimeout);
 
       client.on('close', function () {
         clearTimeout(timeout);
@@ -72,63 +94,93 @@ export default function Home() {
     });
   };
 
-  const iniciar = () => {
+  const iniciar = async () => {
     setScanResult([]); // Limpa resultados anteriores
-    network_promise
-      .then((response: any) => {
-        const newScanResults: ScanResult[] = [];
-        const promises: Promise<ScanResult>[] = [];
+    setIsLoading(true);
+    setScanProgress(0);
+    setTotalScans(0);
 
-        for (let i = 0; i < response['ip_range'].length; i++) {
-          for (let j = 0; j < portRange.length; j++) {
-            promises.push(
-              scanHost(response['ip_range'][i], portRange[j])
-                .then((res: ScanResult) => {
-                  newScanResults.push(res);
-                  return res;
-                })
-                .catch((err) => {
-                  console.error('Error scanning host:', err);
-                  return Promise.reject(err); // Propagate the error
-                })
-            );
-          }
+    try {
+      const response: any = await network_promise;
+      const newScanResults: ScanResult[] = [];
+      const promises: Promise<ScanResult>[] = [];
+      const allHostsAndPorts: { ip: string; port: number }[] = [];
+
+      for (const ip of response['ip_range']) {
+        for (const port of portRange) {
+          allHostsAndPorts.push({ ip, port });
         }
+      }
 
-        Promise.allSettled(promises).then(() => {
-          const groupedResults: GroupedScanResult[] = [];
-          const ipMap: { [key: string]: number[] } = {};
+      const total = allHostsAndPorts.length;
+      setTotalScans(total);
 
-          newScanResults.forEach((result) => {
-            if (!ipMap[result.ip]) {
-              ipMap[result.ip] = [];
-            }
-            ipMap[result.ip].push(result.port);
-          });
+      let completedScans = 0;
 
-          for (const ip in ipMap) {
-            groupedResults.push({ ip, ports: ipMap[ip].sort((a, b) => a - b) });
-          }
-          setScanResult(groupedResults.sort((a, b) => a.ip.localeCompare(b.ip)));
-        });
-      })
-      .catch((err) => {
-        console.error('Network promise error:', err);
+      for (const { ip, port } of allHostsAndPorts) {
+        promises.push(
+          scanHost(ip, port)
+            .then((res: ScanResult) => {
+              completedScans++;
+              setScanProgress(completedScans);
+              if (res.status !== 'closed') {
+                newScanResults.push(res);
+              }
+              return res;
+            })
+            .catch((err) => {
+              completedScans++;
+              setScanProgress(completedScans);
+              console.error('Error scanning host:', err);
+              ToastAndroid.show(
+                `Erro ao escanear ${ip}:${port}: ${err.message}`,
+                ToastAndroid.SHORT
+              );
+              return Promise.reject(err); // Propagate the error
+            })
+        );
+      }
+
+      await Promise.allSettled(promises);
+
+      const groupedResults: GroupedScanResult[] = [];
+      const ipMap: { [key: string]: number[] } = {};
+
+      newScanResults.forEach((result) => {
+        if (!ipMap[result.ip]) {
+          ipMap[result.ip] = [];
+        }
+        ipMap[result.ip].push(result.port);
       });
+
+      for (const ip in ipMap) {
+        groupedResults.push({ ip, ports: ipMap[ip].sort((a, b) => a - b) });
+      }
+
+      setScanResult(groupedResults.sort((a, b) => a.ip.localeCompare(b.ip)));
+
+      updateStore((state) => {
+        state.historico = [...state.historico, newScanResults];
+      });
+    } catch (err: any) {
+      console.error('Network promise error:', err);
+      ToastAndroid.show(`Erro ao obter informações de rede: ${err.message}`, ToastAndroid.LONG);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const scanTCPHost = (host: any, port: any) => {
     const client = TcpSocket.createConnection(port, host);
-    // console.log('Socket created:', client);
     if (client) {
       ToastAndroid.show('Socket created.', ToastAndroid.SHORT);
       client
         .on('data', function (data) {
-          //Registra a resposta do servidor
+          // Registra a resposta do servidor
           ToastAndroid.show('RESPONSE: ' + data, ToastAndroid.SHORT);
         })
         .on('connect', function () {
-          //Escreve manualmente um solicitação HTTP
+          // Escreve manualmente uma solicitação HTTP
           client.write('GET / HTTP/1.0\r\n\r\n');
           ToastAndroid.show('CONNECTED : ' + host + ' ' + port, ToastAndroid.LONG);
         })
@@ -145,6 +197,7 @@ export default function Home() {
           ToastAndroid.show('TIMEOUT', ToastAndroid.SHORT);
         });
     } else {
+      ToastAndroid.show('Erro ao criar socket', ToastAndroid.SHORT);
     }
   };
 
@@ -163,8 +216,8 @@ export default function Home() {
             <TouchableOpacity
               key={port}
               onPress={() => scanTCPHost(item.ip, port)}
-              className="mr-2 items-center justify-center rounded-full border border-[#2196F3] bg-[#1A1A1A] px-3 py-1.5">
-              <Text className="font-roboto text-sm font-medium text-[#2196F3]">{port}</Text>
+              className="mr-2 items-center justify-center rounded-full border border-[#00C851] bg-[#1A1A1A] px-3 py-1.5">
+              <Text className="font-roboto text-sm font-medium text-[#00C851]">{port}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -175,13 +228,22 @@ export default function Home() {
   return (
     <>
       <Container>
-        <View className="flex-1 bg-black pt-5">
+        <View className="flex-1 bg-black">
           <Button
             title="INICIAR SCAN"
             onPress={() => {
               iniciar();
             }}
+            disabled={isLoading}
           />
+          {isLoading && (
+            <View className="mt-4 items-center">
+              <ActivityIndicator size="large" color="#2196F3" />
+              <Text className="font-roboto mt-2 text-white">
+                Escaneando... ({scanProgress}/{totalScans})
+              </Text>
+            </View>
+          )}
           <FlatList
             data={scanResult}
             numColumns={1}

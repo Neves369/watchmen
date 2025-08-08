@@ -1,15 +1,30 @@
-import { create } from 'zustand';
+import { create } from "zustand";
+import { produce } from "immer";
 
-export interface BearState {
-  bears: number;
-  increasePopulation: () => void;
-  removeAllBears: () => void;
-  updateBears: (newBears: number) => void;
-}
+type State = {
+  portas: any[],
+  timeout: number,
+  historico: any[],
 
-export const useStore = create<BearState>((set) => ({
-  bears: 0,
-  increasePopulation: () => set((state) => ({ bears: state.bears + 1 })),
-  removeAllBears: () => set({ bears: 0 }),
-  updateBears: (newBears) => set({ bears: newBears }),
+};
+
+export const global = create<State>((set, get) => ({
+    portas: [22, 80, 443, 8080],
+    timeout: 5000,
+    historico: []
 }));
+
+
+export const updateStore = function (updater: (state: State) => void) {
+  global.setState(produce(global.getState(), updater));
+};
+
+
+export function clearStates() {
+  updateStore((state) => {
+    state.portas = [];
+    state.timeout = 5000;
+    state.historico= [];
+  })    
+}
+ 

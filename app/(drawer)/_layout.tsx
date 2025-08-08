@@ -1,6 +1,6 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 
 import { HeaderButton } from '../../components/HeaderButton';
 
@@ -22,9 +22,7 @@ const DrawerLayout = () => {
         options={{
           headerTitle: 'Varredura de Rede',
           drawerLabel: 'Network',
-          drawerIcon: ({ size, color }) => (
-            <MaterialIcons name="border-bottom" size={size} color={color} />
-          ),
+          drawerIcon: ({ size, color }) => <FontAwesome name="wifi" size={size} color={color} />,
           headerRight: () => (
             <Link href="/modal" asChild>
               <HeaderButton />
@@ -38,7 +36,7 @@ const DrawerLayout = () => {
           headerTitle: 'Varredura de Bluetooth',
           drawerLabel: 'Bluetooth',
           drawerIcon: ({ size, color }) => (
-            <MaterialIcons name="border-bottom" size={size} color={color} />
+            <FontAwesome name="bluetooth-b" size={size} color={color} />
           ),
           headerRight: () => (
             <Link href="/modal" asChild>
