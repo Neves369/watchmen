@@ -9,8 +9,8 @@ export default function Home() {
       <Stack.Screen options={{ title: 'Watchmen' }} />
       <Container>
         <View className="flex-1 items-center justify-center">
-          <MaterialCommunityIcons name="cube-scan" size={200} color="#6b7280" />
-          <Text className="text-xl font-bold text-gray-500">Selecione um Módulo para iniciar</Text>
+          <MaterialCommunityIcons name="cube-scan" size={200} color="#e5e7eb" />
+          <Text className="text-xl font-bold text-gray-200">Selecione um Módulo para iniciar</Text>
         </View>
       </Container>
     </>

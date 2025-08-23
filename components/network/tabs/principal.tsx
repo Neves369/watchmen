@@ -38,7 +38,7 @@ export default function Home() {
       const firstHostHex = sip.convertIPtoHex(firstHost);
       const lastHostHex = sip.convertIPtoHex(lastHost);
       let ipRange = sip.getIPRange(firstHostHex, lastHostHex);
-      ipRange = ipRange.slice(1); // Remove o primeiro ip do array
+      // ipRange = ipRange.slice(1); // Remove o primeiro ip do array
 
       resolve({
         local_ip: local_ip,
@@ -159,9 +159,14 @@ export default function Home() {
 
       setScanResult(groupedResults.sort((a, b) => a.ip.localeCompare(b.ip)));
 
-      updateStore((state) => {
-        state.historico = [...state.historico, newScanResults];
-      });
+      // const newHistoryEntry: any = {
+      //   timestamp: new Date().toLocaleString(),
+      //   results: newScanResults,
+      // };
+
+      // updateStore((state) => {
+      //   state.historico = [...state.historico, newHistoryEntry];
+      // });
     } catch (err: any) {
       console.error('Network promise error:', err);
       ToastAndroid.show(`Erro ao obter informações de rede: ${err.message}`, ToastAndroid.LONG);
@@ -172,38 +177,105 @@ export default function Home() {
 
   const scanTCPHost = (host: any, port: any) => {
     const client = TcpSocket.createConnection(port, host);
+    // console.log('entrou...: ', client);
     if (client) {
       ToastAndroid.show('Socket created.', ToastAndroid.SHORT);
-      client
-        .on('data', function (data) {
-          // Registra a resposta do servidor
-          ToastAndroid.show('RESPONSE: ' + data, ToastAndroid.SHORT);
-        })
-        .on('connect', function () {
-          // Escreve manualmente uma solicitação HTTP
-          client.write('GET / HTTP/1.0\r\n\r\n');
-          ToastAndroid.show('CONNECTED : ' + host + ' ' + port, ToastAndroid.LONG);
-        })
-        .on('close', function () {
-          ToastAndroid.show('DONE', ToastAndroid.SHORT);
-          client.destroy();
-        })
-        .on('error', function (err) {
-          console.error('Socket error:', err);
-          ToastAndroid.show('ERROR: ' + err.message, ToastAndroid.SHORT);
-        })
-        .on('timeout', function () {
-          console.error('Socket timeout');
-          ToastAndroid.show('TIMEOUT', ToastAndroid.SHORT);
+
+      // Listener para quando a conexão é estabelecida
+      client.on('connect', function () {
+        const newAttempt: any = {
+          ip: host,
+          port: port,
+          timestamp: new Date().toLocaleString(),
+          status: 'connected',
+          message: 'Conectado com sucesso. Enviando requisição HTTP...',
+        };
+
+        updateStore((state) => {
+          state.historico = [...state.historico, newAttempt];
         });
+
+        client.write('GET / HTTP/1.0\r\n\r\n');
+        ToastAndroid.show('CONNECTED : ' + host + ' ' + port, ToastAndroid.LONG);
+      });
+
+      // Listener para quando dados são recebidos
+      client.on('data', function (data) {
+        const newAttempt: any = {
+          ip: host,
+          port: port,
+          timestamp: new Date().toLocaleString(),
+          status: 'data_received',
+          message: 'Dados recebidos: ' + data.toString().substring(0, 50) + '...',
+        };
+
+        updateStore((state) => {
+          state.historico = [...state.historico, newAttempt];
+        });
+        ToastAndroid.show('RESPONSE: ' + data, ToastAndroid.SHORT);
+      });
+
+      // Listener para erros
+      client.on('error', function (err) {
+        const newAttempt: any = {
+          ip: host,
+          port: port,
+          timestamp: new Date().toLocaleString(),
+          status: 'error',
+          message: 'Erro: ' + err.message,
+        };
+        updateStore((state) => {
+          state.historico = [...state.historico, newAttempt];
+        });
+        console.error('Socket error:', err);
+        ToastAndroid.show('ERROR: ' + err.message, ToastAndroid.SHORT);
+        client.destroy();
+      });
+
+      // Listener para o timeout
+      client.on('timeout', function () {
+        const newAttempt: any = {
+          ip: host,
+          port: port,
+          timestamp: new Date().toLocaleString(),
+          status: 'timeout',
+          message: 'Tempo limite esgotado.',
+        };
+        updateStore((state) => {
+          state.historico = [...state.historico, newAttempt];
+        });
+        console.error('Socket timeout');
+        ToastAndroid.show('TIMEOUT', ToastAndroid.SHORT);
+        client.destroy();
+      });
+
+      // Listener para o fechamento
+      client.on('close', function () {
+        ToastAndroid.show('DONE', ToastAndroid.SHORT);
+        client.destroy();
+      });
     } else {
       ToastAndroid.show('Erro ao criar socket', ToastAndroid.SHORT);
+      const newAttempt: any = {
+        ip: host,
+        port: port,
+        timestamp: new Date().toLocaleString(),
+        status: 'error',
+        message: 'Falha ao criar o socket.',
+      };
+      updateStore((state) => {
+        state.historico = [...state.historico, newAttempt];
+      });
     }
   };
 
   const renderItem = useCallback(({ item }: { item: GroupedScanResult }) => {
     return (
-      <View className="my-2 w-full self-center rounded-lg bg-[#2A2A2A] p-4 shadow-md shadow-black">
+      <TouchableOpacity
+        onPress={() => {
+          item.ports.map((port) => scanTCPHost(item.ip, port));
+        }}
+        className="my-2 w-full self-center rounded-lg bg-[#2A2A2A] p-4 shadow-md shadow-black">
         <View className="mb-3 flex-row items-center justify-between">
           <Text className="font-roboto text-2xl font-bold text-white">{item.ip}</Text>
           <View className="flex-row items-center">
@@ -221,14 +293,14 @@ export default function Home() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
+      </TouchableOpacity>
     );
   }, []);
 
   return (
     <>
       <Container>
-        <View className="flex-1 bg-black">
+        <View className="flex-1">
           <Button
             title="INICIAR SCAN"
             onPress={() => {
