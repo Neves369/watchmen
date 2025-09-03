@@ -45,6 +45,21 @@ const DrawerLayout = () => {
           ),
         }}
       />
+       <Drawer.Screen
+        name="cve/index"
+        options={{
+          headerTitle: 'Busca de CVEs',
+          drawerLabel: 'CVE Search',
+          drawerIcon: ({ size, color }) => (
+            <FontAwesome name="bug" size={size} color={color} />
+          ),
+          headerRight: () => (
+            <Link href="/modal" asChild>
+              <HeaderButton />
+            </Link>
+          ),
+        }}
+      />
     </Drawer>
   );
 };
