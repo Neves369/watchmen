@@ -1,7 +1,7 @@
 import { Button } from '~/components/Button';
 import { useCallback, useState } from 'react';
 import { Container } from '~/components/Container';
-import { View, Text, FlatList, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity } from 'react-native';
 
 export default function OSV() {
   const [packageName, setPackageName] = useState('');
@@ -59,7 +59,7 @@ export default function OSV() {
       }
 
       const data = await response.json();
-      console.log('teste: ', data);
+      console.log('teste: ', data.vulns);
       setResults(data.vulns);
     } catch (err) {
       setError(`Erro: ${err.message}`);
@@ -84,22 +84,13 @@ export default function OSV() {
         onPress={() => {}}
         className="my-2 w-full self-center rounded-lg bg-[#2A2A2A] p-4 shadow-md shadow-black">
         <View className="mb-3 flex-row items-center justify-between">
-          <Text className="font-roboto text-2xl font-bold text-white">{item.ip}</Text>
+          <Text className="font-roboto text-xl font-bold text-white">{item.id}</Text>
           <View className="flex-row items-center">
             <View className="mr-1.5 h-2 w-2 rounded-full bg-[#00C851]" />
-            <Text className="font-roboto text-sm font-medium text-[#00C851]">Disponível</Text>
+            <Text className="font-roboto text-sm font-medium text-[#00C851]">teste</Text>
           </View>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-1 flex-row">
-          {item.ports.map((port: any) => (
-            <TouchableOpacity
-              key={port}
-              onPress={() => {}}
-              className="mr-2 items-center justify-center rounded-full border border-[#00C851] bg-[#1A1A1A] px-3 py-1.5">
-              <Text className="font-roboto text-sm font-medium text-[#00C851]">{port}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <Text className="font-roboto text-sm  text-white">{item.summary}</Text>
       </TouchableOpacity>
     );
   }, []);
@@ -195,10 +186,9 @@ export default function OSV() {
             onPress={() => {
               handleSearch();
             }}
-            disabled={true}
           />
           <FlatList
-            data={[]}
+            data={results}
             numColumns={1}
             keyExtractor={(item) => item.ip}
             renderItem={renderItem}
