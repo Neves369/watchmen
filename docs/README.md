@@ -1,13 +1,9 @@
 # Watchmen
-
-App de auditoria de rede local e Bluetooth desenvolvido em React Native
-com Expo.
-
----
+<img width="728" height="409" alt="logo" src="https://github.com/user-attachments/assets/48078060-6fd1-4773-bcc1-9d1d2ae9157f" />
 
 ## Sobre
 
-Watchmen permite escanear a rede Wi-Fi local para descobrir
+Watchmen é uma ferramenta que permite escanear a rede Wi-Fi local para descobrir
 dispositivos conectados, verificar portas TCP abertas e interagir
 com dispositivos Bluetooth.
 
