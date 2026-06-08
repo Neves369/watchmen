@@ -103,7 +103,6 @@ export default function Home() {
     try {
       const response: any = await network_promise;
       const newScanResults: ScanResult[] = [];
-      const promises: Promise<ScanResult>[] = [];
       const allHostsAndPorts: { ip: string; port: number }[] = [];
 
       for (const ip of response['ip_range']) {
@@ -116,32 +115,32 @@ export default function Home() {
       setTotalScans(total);
 
       let completedScans = 0;
+      const maxConcurrency = Math.min(20, Math.max(1, total));
+      let currentIndex = 0;
 
-      for (const { ip, port } of allHostsAndPorts) {
-        promises.push(
-          scanHost(ip, port)
-            .then((res: ScanResult) => {
-              completedScans++;
-              setScanProgress(completedScans);
-              if (res.status !== 'closed') {
-                newScanResults.push(res);
-              }
-              return res;
-            })
-            .catch((err) => {
-              completedScans++;
-              setScanProgress(completedScans);
-              console.error('Error scanning host:', err);
-              ToastAndroid.show(
-                `Erro ao escanear ${ip}:${port}: ${err.message}`,
-                ToastAndroid.SHORT
-              );
-              return Promise.reject(err); // Propagate the error
-            })
-        );
-      }
+      const worker = async () => {
+        while (true) {
+          const idx = currentIndex;
+          currentIndex += 1;
+          if (idx >= total) break;
+          const { ip, port } = allHostsAndPorts[idx];
+          try {
+            const res = await scanHost(ip, port);
+            completedScans++;
+            setScanProgress(completedScans);
+            if (res.status !== 'closed') {
+              newScanResults.push(res);
+            }
+          } catch (err: any) {
+            completedScans++;
+            setScanProgress(completedScans);
+            console.error('Error scanning host:', err);
+            ToastAndroid.show(`Erro ao escanear ${ip}:${port}: ${err.message}`, ToastAndroid.SHORT);
+          }
+        }
+      };
 
-      await Promise.allSettled(promises);
+      await Promise.all(Array.from({ length: maxConcurrency }, () => worker()));
 
       const groupedResults: GroupedScanResult[] = [];
       const ipMap: { [key: string]: number[] } = {};
@@ -277,10 +276,10 @@ export default function Home() {
         }}
         className="my-2 w-full self-center rounded-lg bg-[#2A2A2A] p-4 shadow-md shadow-black">
         <View className="mb-3 flex-row items-center justify-between">
-          <Text className="font-roboto text-2xl font-bold text-white">{item.ip}</Text>
+          <Text className="text-2xl font-bold text-white">{item.ip}</Text>
           <View className="flex-row items-center">
             <View className="mr-1.5 h-2 w-2 rounded-full bg-[#00C851]" />
-            <Text className="font-roboto text-sm font-medium text-[#00C851]">Disponível</Text>
+            <Text className="text-sm font-medium text-[#00C851]">Disponível</Text>
           </View>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-1 flex-row">
@@ -289,7 +288,7 @@ export default function Home() {
               key={port}
               onPress={() => scanTCPHost(item.ip, port)}
               className="mr-2 items-center justify-center rounded-full border border-[#00C851] bg-[#1A1A1A] px-3 py-1.5">
-              <Text className="font-roboto text-sm font-medium text-[#00C851]">{port}</Text>
+              <Text className="text-sm font-medium text-[#00C851]">{port}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -311,7 +310,7 @@ export default function Home() {
           {isLoading && (
             <View className="mt-4 items-center">
               <ActivityIndicator size="large" color="#2196F3" />
-              <Text className="font-roboto mt-2 text-white">
+              <Text className="mt-2 text-white">
                 Escaneando... ({scanProgress}/{totalScans})
               </Text>
             </View>
@@ -321,7 +320,7 @@ export default function Home() {
             numColumns={1}
             keyExtractor={(item) => item.ip}
             renderItem={renderItem}
-            contentContainerStyle={{ width: '100%', alignSelf: 'center', paddingVertical: 20 }}
+            contentContainerStyle={{ width: '100%', alignSelf: 'center', paddingVertical: 12 }}
           />
         </View>
       </Container>

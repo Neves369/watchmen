@@ -3,7 +3,7 @@ import NetworkTabs from '~/components/network/tabs';
 
 export default function Home() {
   return (
-    <SafeAreaView style={{ flex: 1, paddingBottom: 15, backgroundColor: '#000' }}>
+    <SafeAreaView className="flex-1 bg-black" style={{ paddingBottom: 15 }}>
       <NetworkTabs />
     </SafeAreaView>
   );

@@ -15,5 +15,5 @@ export const Container = ({ children }: { children: React.ReactNode }) => {
 
 const styles = {
   container: 'flex flex-1',
-  background: 'flex flex-1 p-6 bg-white',
+  background: 'flex flex-1 p-6 bg-black',
 };

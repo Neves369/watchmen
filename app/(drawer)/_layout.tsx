@@ -10,10 +10,20 @@ const DrawerLayout = () => {
       <Drawer.Screen
         name="index"
         options={{
-          headerTitle: 'Home',
+          headerTitle: 'Watchmen',
           drawerLabel: 'Home',
           drawerIcon: ({ size, color }) => (
             <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="discovery"
+        options={{
+          headerTitle: 'Descoberta de Dispositivos',
+          drawerLabel: 'Discovery',
+          drawerIcon: ({ size, color }) => (
+            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />
@@ -31,27 +41,12 @@ const DrawerLayout = () => {
         }}
       />
       <Drawer.Screen
-        name="bluetooth/index"
+        name="bluetooth"
         options={{
           headerTitle: 'Varredura de Bluetooth',
           drawerLabel: 'Bluetooth',
           drawerIcon: ({ size, color }) => (
             <FontAwesome name="bluetooth-b" size={size} color={color} />
-          ),
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <HeaderButton />
-            </Link>
-          ),
-        }}
-      />
-       <Drawer.Screen
-        name="cve/index"
-        options={{
-          headerTitle: 'Busca de CVEs',
-          drawerLabel: 'CVE Search',
-          drawerIcon: ({ size, color }) => (
-            <FontAwesome name="bug" size={size} color={color} />
           ),
           headerRight: () => (
             <Link href="/modal" asChild>

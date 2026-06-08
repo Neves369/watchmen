@@ -8,7 +8,8 @@ const Tab = createBottomTabNavigator();
 
 export default function NetworkTabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      screenOptions={{ headerShown: false, tabBarStyle: { backgroundColor: '#1A1A1A' } }}>
       <Tab.Screen
         name="Scan"
         options={{

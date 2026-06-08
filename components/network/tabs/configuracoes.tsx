@@ -21,56 +21,36 @@ export default function Configuracoes() {
   };
 
   return (
-    <View className="gap-8 p-5">
+    <View className="flex-1 gap-6 bg-black p-5">
       <Stack.Screen options={{ title: 'Configurações' }} />
-      <View className="rounded-lg bg-[#222] p-5">
-        <Text style={{ color: '#fff', fontSize: 18, marginBottom: 12, fontWeight: 'bold' }}>
-          Escolha as portas TCP para varredura
-        </Text>
+      <View className="rounded-xl bg-[#2A2A2A] p-5">
+        <Text className="mb-4 text-lg font-bold text-white">Portas TCP</Text>
         <TextInput
-          style={{
-            backgroundColor: '#333',
-            color: '#fff',
-            borderRadius: 8,
-            padding: 10,
-            marginBottom: 16,
-          }}
+          className="mb-2 rounded-lg bg-[#333] p-3 text-base text-white"
           value={ports}
           onChangeText={setPorts}
-          placeholder="Ex: 22, 80, 443, 8080"
-          placeholderTextColor="#aaa"
+          placeholder="Ex: 22;80;443;8080"
+          placeholderTextColor="#888"
           keyboardType="numbers-and-punctuation"
         />
-        <Text style={{ color: '#ccc', marginBottom: 16 }}>
+        <Text className="text-sm text-gray-500">
           Quanto mais portas você escolher, mais tempo pode demorar para finalizar a varredura.
         </Text>
       </View>
 
-      <View className="rounded-lg bg-[#222] p-5">
-        <Text style={{ color: '#fff', fontSize: 18, marginBottom: 12, fontWeight: 'bold' }}>
-          Timeout
-        </Text>
+      <View className="rounded-xl bg-[#2A2A2A] p-5">
+        <Text className="mb-4 text-lg font-bold text-white">Timeout (ms)</Text>
         <TextInput
-          style={{
-            backgroundColor: '#333',
-            color: '#fff',
-            borderRadius: 8,
-            padding: 10,
-            marginBottom: 16,
-          }}
+          className="mb-2 rounded-lg bg-[#333] p-3 text-base text-white"
           value={timeOut.toString()}
-          onChangeText={(e) => {
-            setTimeout(Number(e));
-          }}
-          placeholder="Ex: 22, 80, 443, 8080"
-          placeholderTextColor="#aaa"
+          onChangeText={(e) => setTimeout(Number(e))}
+          placeholder="5000"
+          placeholderTextColor="#888"
           keyboardType="numeric"
         />
-        <Text style={{ color: '#ccc', marginBottom: 16 }}>
-          Escolha o tempo de tentativa de conexão (ms)
-        </Text>
+        <Text className="text-sm text-gray-500">Tempo limite para cada tentativa de conexão</Text>
       </View>
-      <Button title="Confirmar" onPress={handleConfirm} color="#00C851" />
+      <Button title="SALVAR" onPress={handleConfirm} color="#00C851" />
     </View>
   );
 }

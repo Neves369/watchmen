@@ -1,14 +1,10 @@
-import { Stack } from 'expo-router';
-import { Container } from '~/components/Container';
-import { ScreenContent } from '~/components/ScreenContent';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import BluetoothTabs from '~/components/bluetooth/tabs';
 
-export default function Home() {
+export default function BluetoothScreen() {
   return (
-    <>
-      <Stack.Screen options={{ title: 'Network' }} />
-      <Container>
-        <ScreenContent path="app/(drawer)/(tabs)/two.tsx" title="Network" />
-      </Container>
-    </>
+    <SafeAreaView className="flex-1 bg-black">
+      <BluetoothTabs />
+    </SafeAreaView>
   );
 }
