@@ -40,11 +40,3 @@ Drawer
     ├── Detalhes      # Serviços BLE / Terminal Serial
     └── Configurações # Tipos de scan e filtros
 ```
-
----
-
-## Tema
-
-Interface em tema escuro com cards `#2A2A2A` sobre fundo preto,
-botões de ação na cor verde `#00C851` e indicadores de status
-vermelho `#FF4444` / verde `#00C851`.
