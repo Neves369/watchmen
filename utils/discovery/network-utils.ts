@@ -1,19 +1,3 @@
-export async function resolveHostname(ip: string): Promise<string | null> {
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
-
-    const response = await fetch('http://' + ip + '/', {
-      method: 'HEAD',
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    return response.headers.get('server') || null;
-  } catch {
-    return null;
-  }
-}
-
 export function isValidIp(ip: string): boolean {
   const parts = ip.split('.');
   if (parts.length !== 4) return false;
@@ -44,7 +28,6 @@ export function isGateway(ip: string, subnet: string): boolean {
 }
 
 export default {
-  resolveHostname,
   isValidIp,
   ipToNumber,
   numberToIp,

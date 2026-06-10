@@ -32,6 +32,16 @@ function lookupVendor(mac: string | null | undefined): string | null {
   return (macVendors as Record<string, string>)[prefix] || null;
 }
 
+function phaseLabel(phase: string): string {
+  const labels: Record<string, string> = {
+    tcp: 'TCP ports',
+    probe: 'Probing hosts',
+    ping: 'ICMP ping',
+    mdns: 'mDNS services',
+  };
+  return labels[phase] || phase;
+}
+
 export default function DiscoveryPrincipal() {
   const router = useRouter();
   const devices = discoveryStore((s) => s.devices);
@@ -39,7 +49,7 @@ export default function DiscoveryPrincipal() {
   const scanProgress = discoveryStore((s) => s.scanProgress);
   const error = discoveryStore((s) => s.error);
   const [config] = useState(defaultConfig);
-  const [scanPhase, setScanPhase] = useState<'idle' | 'arp' | 'mdns'>('idle');
+  const [scanPhase, setScanPhase] = useState<string>('idle');
   const [mdnsProgress, setMdnsProgress] = useState({ completed: 0, total: 0 });
   const [hasScanned, setHasScanned] = useState(false);
 
@@ -49,18 +59,23 @@ export default function DiscoveryPrincipal() {
     setError(null);
     setScanProgress(0, 0);
     setHasScanned(false);
-    setScanPhase('arp');
+    setScanPhase('tcp');
 
     try {
       const allDevices: Map<string, DiscoveredDevice> = new Map();
 
       if (config.enableArp) {
         setScanProgress(0, 0);
-        ToastAndroid.show('Escaneando rede via ARP...', ToastAndroid.SHORT);
+        ToastAndroid.show('Escaneando rede...', ToastAndroid.SHORT);
 
-        const arpEntries = await arpScan(config.pingTimeout, (completed, total) => {
-          setScanProgress(completed, total);
-        });
+        const arpEntries = await arpScan(
+          config.pingTimeout,
+          config.enablePing,
+          (completed, total, phase) => {
+            setScanPhase(phase);
+            setScanProgress(completed, total);
+          }
+        );
 
         for (const entry of arpEntries) {
           const mac = entry.mac || null;
@@ -219,9 +234,9 @@ export default function DiscoveryPrincipal() {
           <View className="mt-4 items-center">
             <ActivityIndicator size="large" color="#2196F3" />
             <Text className="mt-2 text-center text-white">
-              {scanPhase === 'arp'
-                ? `Escaneando rede via ARP... (${scanProgress.completed}/${scanProgress.total})`
-                : `Buscando dispositivos mDNS... (${mdnsProgress.completed}/${mdnsProgress.total})`}
+              {scanPhase === 'mdns'
+                ? `mDNS... (${mdnsProgress.completed}/${mdnsProgress.total})`
+                : `${phaseLabel(scanPhase)}... (${scanProgress.completed}/${scanProgress.total})`}
             </Text>
           </View>
         )}

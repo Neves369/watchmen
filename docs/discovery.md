@@ -1,34 +1,43 @@
 # Discovery — Varredura de Rede Local
 
-Descobre dispositivos conectados à mesma rede Wi-Fi usando duas técnicas
-combinadas: **ARP** e **mDNS**.
+Descobre dispositivos conectados à mesma rede Wi-Fi usando três técnicas
+combinadas: **TCP probes**, **ICMP ping** e **mDNS**.
 
 ---
 
 ## Fluxo de Scan
 
 1. Usuário toca **"INICIAR SCAN"**
-2. Limpa lista anterior e inicia **Fase ARP**
+2. Limpa lista anterior e inicia **Fase ARP/TCP/Ping**
+   - **TCP probes**: tenta conectar em portas comuns + porta alta (65535)
+   - **ICMP ping**: `ping -c 1` via shell nativo (não requer root)
+   - **Leitura da tabela ARP**: lê `/proc/net/arp` e `ip neigh show` via native module
 3. Quando ARP termina, inicia **Fase mDNS**
 4. Dispositivos encontrados em ambas as fases são mesclados pelo **IP**
 5. Resultado final é exibido na lista única da tela Scan
 
 ---
 
-## Fase ARP
+## Fase ARP/TCP/Ping
 
 1. Obtém IP local e máscara de sub-rede via `NetInfo`
 2. Calcula o range de IPs da sub-rede
-3. Executa **ping sweep** concorrente (máx 20 hosts por vez) — tenta conectar
-   na porta TCP 9 de cada IP com timeout configurável
-4. Lê a tabela ARP do sistema (`/proc/net/arp`)
-5. Filtra apenas entradas com flag `0x2` (resposta recebida) e MAC válido
-6. Para cada MAC encontrado, consulta o fabricante em um banco local
-   (`mac-vendors.json` com 2391 entradas)
-7. Retorna lista de `{ IP, MAC, fabricante }`
+3. Executa **TCP probes** concorrentes (máx 20 hosts por vez):
+   - Tenta conectar em portas comuns (80, 443, 22, 445, 139, 548, 5000, 631,
+     8080, 9, 3000, 8443, 5900, 5353) com timeout configurável
+   - Tenta conectar na porta 65535 de cada IP (probe de host)
+4. Executa **ICMP ping sweep** (máx 30 hosts por vez) via native module
+   - Usa `/system/bin/ping -c 1 -W <timeout>` — **não requer root**
+5. Lê a tabela ARP via native module (`/proc/net/arp`) — resolve restrições
+   de segurança do Android 11+
+6. Lê fallback `ip neigh show` para capturar MACs adicionais
+7. Merge: IPs vivos de TCP probes + ICMP ping + tabela ARP são unificados
+8. Para cada MAC encontrado, consulta o fabricante em um banco local
+   (`mac-vendors.json`)
 
-> Dispositivos que respondem ao ping mas não aparecem na tabela ARP
-> também são incluídos como candidatos.
+> O **ICMP ping** é o método mais confiável para detectar hosts com firewall
+> ativo, já que a maioria dos dispositivos responde a ping mesmo com portas
+> bloqueadas.
 
 ---
 
@@ -57,7 +66,7 @@ combinadas: **ARP** e **mDNS**.
   - **Tipo de descoberta**: badge "ARP", "mDNS" ou "Ping"
   - **Serviços encontrados**: badges com ícone (ex: HTTP, SSH, AirPlay)
 - Toque em um cartão → navega para tela de **Detalhes**
-- Indicador de progresso mostra fase atual (ARP ou mDNS)
+- Indicador de progresso mostra fase atual com sub-fase (TCP, probe, ping, mDNS)
 - Mensagem "Nenhum dispositivo encontrado" quando lista vazia
 
 ---
@@ -75,20 +84,31 @@ combinadas: **ARP** e **mDNS**.
 
 ## Configurações
 
-- **Ativar ARP**: liga/desliga varredura ARP
+- **Ativar ARP**: liga/desliga varredura TCP + ARP + Ping
 - **Ativar mDNS**: liga/desliga varredura mDNS
-- **Ativar Ping**: liga/desliga ping sweep
+- **Ativar Ping**: liga/desliga ICMP ping sweep
 - **Timeout Ping**: tempo limite para cada tentativa de ping (ms)
 - **Tipos de Serviço**: seleção dos tipos Bonjour a escutar
 - Botão **SALVAR** persiste as alterações
 
 ---
 
+## Native Module (Android)
+
+O módulo nativo `WatchmenNetwork` (Kotlin) expõe três métodos:
+
+| Método | Descrição |
+|---|---|
+| `ping(ip, timeoutMs)` | Executa `ping -c 1` via shell |
+| `readArpTable()` | Lê `/proc/net/arp` com `BufferedReader` |
+| `readIpNeigh()` | Executa `ip neigh show` para MACs adicionais |
+
+---
+
 ## Observações
 
-- A varredura ARP depende do arquivo `/proc/net/arp` — disponível apenas
-  em Android/Linux. Em outros sistemas o fallback é usar apenas o ping
-  sweep para detectar hosts ativos.
-- mDNS só encontra dispositivos que anunciam serviços Bonjour na rede.
-- Dispositivos que não respondem a ping nem anunciam serviços Bonjour
-  não serão detectados.
+- A leitura da tabela ARP é feita via native module (não via `fetch`) para
+  contornar restrições de segurança do Android 11+
+- ICMP ping via `/system/bin/ping` não requer root
+- mDNS só encontra dispositivos que anunciam serviços Bonjour na rede
+- Dispositivos que não respondem a ping, TCP probes nem ARP não serão detectados

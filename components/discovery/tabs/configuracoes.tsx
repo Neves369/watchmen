@@ -24,6 +24,7 @@ export default function DiscoveryConfig() {
 
   const toggleArp = () => setConfig((c) => ({ ...c, enableArp: !c.enableArp }));
   const toggleMdns = () => setConfig((c) => ({ ...c, enableMdns: !c.enableMdns }));
+  const togglePing = () => setConfig((c) => ({ ...c, enablePing: !c.enablePing }));
 
   return (
     <View className="flex-1 gap-6 bg-black p-5">
@@ -42,6 +43,21 @@ export default function DiscoveryConfig() {
             onValueChange={toggleArp}
             trackColor={{ false: '#555', true: '#00C851' }}
             thumbColor={config.enableArp ? '#fff' : '#ccc'}
+          />
+        </View>
+
+        <View className="mb-4 flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="text-base font-medium text-white">ICMP Ping</Text>
+            <Text className="text-sm text-gray-400">
+              Envia ping para cada IP (detecta hosts com firewall)
+            </Text>
+          </View>
+          <Switch
+            value={config.enablePing}
+            onValueChange={togglePing}
+            trackColor={{ false: '#555', true: '#00C851' }}
+            thumbColor={config.enablePing ? '#fff' : '#ccc'}
           />
         </View>
 
